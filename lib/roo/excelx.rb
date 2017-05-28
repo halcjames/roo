@@ -238,7 +238,7 @@ module Roo
     def label(name)
       labels = workbook.defined_names
       return [nil, nil, nil] if labels.empty? || !labels.key?(name)
-      [labels[name].row, labels[name].column, labels[name].sheet]
+      [labels[name].row, labels[name].col, labels[name].sheet]
     end
 
     # Returns an array which all labels. Each element is an array with
@@ -255,6 +255,7 @@ module Roo
     # Returns the cell values of the given label name
     def label_values(label_name)
       label = workbook.defined_names[label_name]
+      return if label.nil?
       sheet = label.sheet.gsub('\'', '')
       cell_range(label.coordinates, label.sheet)
     end
@@ -268,9 +269,14 @@ module Roo
       data_validation = data_validation(row, col)
       if data_validation && data_validation.type == "list"
         return data_validation.source if data_validation.source.include?(',')
+
+        # For source: 'Sheet Name!A1:A6'
         if data_validation.source.include?('!')
           sheet, range = data_validation.source.split('!')
           cell_range(range, sheet)
+        # For source: 'A$1:A$6'
+        elsif data_validation.source.include?('$')
+          cell_range(data_validation.source.gsub('$', ''))
         else
           label_values(data_validation.source)
         end

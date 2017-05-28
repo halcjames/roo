@@ -5,7 +5,7 @@ module Roo
     class Workbook < Excelx::Extractor
 
       class Label
-        attr_reader :sheet, :name
+        attr_reader :sheet, :name, :row, :col
         attr_reader :coordinates
 
         def initialize(name, sheet, coordinates)
@@ -17,16 +17,8 @@ module Roo
           @coordinates = coordinates.gsub("$", '')
         end
 
-        def row
-          @splitted_coordinates[1].to_i
-        end
-
-        def col
-          ::Roo::Utils.letter_to_number(@splitted_coordinates[0])
-        end
-
         def key
-          [row, column].compact
+          [row, col].compact
         end
       end
 

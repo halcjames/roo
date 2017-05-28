@@ -344,6 +344,18 @@ describe Roo::Excelx do
     end
   end
 
+  describe '#dropdown' do 
+    let(:path) { 'test/files/dropdown.xlsx' }
+
+    it 'fetches cell range values' do
+      expect(subject.dropdown(1,3)).to eq [1,2,3,4,5]
+    end
+
+    it 'fetches dropdown from label' do 
+      expect(subject.dropdown(2,3)).to eq [1,2]
+    end
+  end
+
   describe '#hyperlink?' do
     let(:path) { 'test/files/link.xlsx' }
 
@@ -457,6 +469,7 @@ describe Roo::Excelx do
         expect(index).to eq 11
       end
     end
+    
 
     context 'with offset and max_rows options' do
       let(:offset) { 3 }
