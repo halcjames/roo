@@ -1,5 +1,6 @@
 require 'forwardable'
 require 'roo/excelx/extractor'
+require 'roo/excelx/data_validation'
 
 module Roo
   class Excelx
@@ -20,6 +21,10 @@ module Roo
 
       def hyperlinks(relationships)
         @hyperlinks ||= extract_hyperlinks(relationships)
+      end
+
+      def data_validations
+        @data_validations ||= extract_data_validations
       end
 
       # Get the dimensions for the sheet.
@@ -199,6 +204,21 @@ module Roo
         expand_merged_ranges(extracted_cells) if @options[:expand_merged_ranges]
 
         extracted_cells
+      end
+
+      def extract_data_validations
+        # original validations
+        dvalidations = doc.xpath('//dataValidations/dataValidation').map do |data_validation_node|
+          Excelx::DataValidation.load_from_node(data_validation_node)
+        end
+
+        # extended validations
+        dvalidations_ext = doc.xpath('//extLst//ext//dataValidations/dataValidation').map do |data_validation_node_ext|
+          Excelx::DataValidation.load_from_node(data_validation_node_ext)
+        end
+
+        # merge validations
+        [dvalidations, dvalidations_ext].flatten.compact
       end
 
       def extract_dimensions

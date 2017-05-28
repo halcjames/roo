@@ -22,6 +22,10 @@ module Roo
         @present_cells ||= cells.select { |_, cell| cell && !cell.empty? }
       end
 
+      def data_validations
+        @data_validations ||= @sheet.data_validations
+      end
+
       # Yield each row as array of Excelx::Cell objects
       # accepts options max_rows (int) (offset by 1 for header),
       # pad_cells (boolean) and offset (int)

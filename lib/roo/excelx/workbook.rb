@@ -3,18 +3,22 @@ require 'roo/excelx/extractor'
 module Roo
   class Excelx
     class Workbook < Excelx::Extractor
-      class Label
-        attr_reader :sheet, :row, :col, :name
 
-        def initialize(name, sheet, row, col)
+      class Label
+        attr_reader :sheet, :name, :row, :col
+        attr_reader :coordinates
+
+        def initialize(name, sheet, coordinates)
           @name = name
-          @sheet = sheet
+          @sheet = sheet.gsub('\'', '')
+          col, row = coordinates.split('$')
           @row = row.to_i
           @col = ::Roo::Utils.letter_to_number(col)
+          @coordinates = coordinates.gsub("$", '')
         end
 
         def key
-          [@row, @col]
+          [row, col].compact
         end
       end
 
@@ -31,10 +35,9 @@ module Roo
       def defined_names
         Hash[doc.xpath('//definedName').map do |defined_name|
           # "Sheet1!$C$5"
-          sheet, coordinates = defined_name.text.split('!$', 2)
-          col, row = coordinates.split('$')
+          sheet, coordinates = defined_name.text.split('!$', 2)          
           name = defined_name['name']
-          [name, Label.new(name, sheet, row, col)]
+          [name, Label.new(name, sheet, coordinates)]
         end]
       end
 

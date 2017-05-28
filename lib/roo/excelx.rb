@@ -238,7 +238,6 @@ module Roo
     def label(name)
       labels = workbook.defined_names
       return [nil, nil, nil] if labels.empty? || !labels.key?(name)
-
       [labels[name].row, labels[name].col, labels[name].sheet]
     end
 
@@ -251,6 +250,61 @@ module Roo
           [label.row, label.col, label.sheet]
         ]
       end
+    end
+
+    # Returns the cell values of the given label name
+    def label_values(label_name)
+      label = workbook.defined_names[label_name]
+      return if label.nil?
+      sheet = label.sheet.gsub('\'', '')
+      cell_range(label.coordinates, label.sheet)
+    end
+
+    def data_validation(row, col)
+      keys = normalize(row, col)
+      data_validations.find { |data_validation| data_validation.in_range?(keys.first, keys.last )}
+    end
+
+    def dropdown(row, col)
+      data_validation = data_validation(row, col)
+      if data_validation && data_validation.type == "list"
+        return data_validation.source if data_validation.source.include?(',')
+
+        # For source: 'Sheet Name!A1:A6'
+        if data_validation.source.include?('!')
+          sheet, range = data_validation.source.split('!')
+          cell_range(range, sheet)
+        # For source: 'A$1:A$6'
+        elsif data_validation.source.include?('$')
+          cell_range(data_validation.source.gsub('$', ''))
+        else
+          label_values(data_validation.source)
+        end
+      end
+    end
+
+    def cell_range(range, sheet=nil)
+      start_row, start_column, end_row, end_column = parse_range(range)
+      values = (start_row).upto(end_row).map do |row_index|
+        (start_column..end_column).map do |column_index|
+          cell(row_index, column_index, sheet)
+        end.flatten
+      end
+      
+      start_column == end_column ? values.flatten : values
+    end
+
+    def parse_range(range)
+      if range.include?(":")
+        start_cell, end_cell = range.split(":")
+        start_column, start_row = start_cell.partition(/\d+/)
+        end_column, end_row = end_cell.partition(/\d+/)
+      else
+        start_column, start_row = range.partition(/\d+/)     
+        end_column = start_column
+        end_row = start_row
+      end
+      [normalize(start_row.to_i, start_column), normalize(end_row.to_i, end_column)].flatten
     end
 
     def hyperlink?(row, col, sheet = nil)
@@ -280,6 +334,10 @@ module Roo
       sheet_for(sheet).comments.map do |(x, y), comment|
         [x, y, comment]
       end
+    end
+
+    def data_validations(sheet = nil)
+      sheet_for(sheet).data_validations
     end
 
     # Yield an array of Excelx::Cell
